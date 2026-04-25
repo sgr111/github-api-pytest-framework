@@ -1,0 +1,14 @@
+venv/
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+reports/
+allure-results/
+allure-report/
+.DS_Store
+.env
+package.json
+package-lock.json
+*.cpython-*.pyc

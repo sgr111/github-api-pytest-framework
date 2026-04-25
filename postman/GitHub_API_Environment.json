@@ -1,0 +1,36 @@
+{
+  "id": "github-api-environment",
+  "name": "GitHub API Environment",
+  "values": [
+    {
+      "key": "GITHUB_TOKEN",
+      "value": "ADD_YOUR_TOKEN_HERE",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "base_url",
+      "value": "https://api.github.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "known_user",
+      "value": "torvalds",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "known_repo_owner",
+      "value": "psf",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "known_repo_name",
+      "value": "requests",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}
