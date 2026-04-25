@@ -36,7 +36,7 @@ jobs:
 
       - name: Run Smoke Tests
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
         run: |
           pytest -m smoke \
@@ -80,7 +80,7 @@ jobs:
 
       - name: Run Full Regression Suite
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
         run: |
           pytest \
