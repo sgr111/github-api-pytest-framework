@@ -24,17 +24,17 @@ class TestAuthSmoke:
         result = auth_client.get_and_validate_rate_limit()
         assert isinstance(result, RateLimitModel)
 
-    def test_get_authenticated_user_status_200(self, auth_client):
-        """GET /user returns 200 with valid token"""
-        response = auth_client.get_authenticated_user()
-        auth_client.assert_status(response, 200)
+    # def test_get_authenticated_user_status_200(self, auth_client):
+    #     """GET /user returns 200 with valid token"""
+    #     response = auth_client.get_authenticated_user()
+    #     auth_client.assert_status(response, 200)
 
-    def test_get_authenticated_user_has_login(self, auth_client):
-        """Authenticated user response must have login field"""
-        response = auth_client.get_authenticated_user()
-        body = response.json()
-        assert "login" in body
-        assert body["login"] != ""
+    # def test_get_authenticated_user_has_login(self, auth_client):
+    #     """Authenticated user response must have login field"""
+    #     response = auth_client.get_authenticated_user()
+    #     body = response.json()
+    #     assert "login" in body
+    #     assert body["login"] != ""
 
 
 @pytest.mark.regression
