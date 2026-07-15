@@ -1,418 +1,215 @@
 # GitHub API Pytest Framework
 
-A production-grade **dual-layer API test automation framework** built with **Python, Pytest, Requests, Pydantic v2, Postman, and Newman** — testing the real GitHub REST API across 112 total assertions.
+[![GitHub API Test Suite](https://github.com/sgr111/github-api-pytest-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sgr111/github-api-pytest-framework/actions/workflows/ci.yml)
 
-Implements **3-stage CI/CD pipeline** (GitHub Actions smoke → regression → Newman) + **Jenkins integration** with automated artifact archival.
-
-[![GitHub Actions CI](https://github.com/sgr111/github-api-pytest-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/sgr111/github-api-pytest-framework/actions)
+A production-grade, dual-layer API test automation framework built with **Python, Pytest, Requests, and Pydantic v2**, alongside a parallel **Postman/Newman** suite — testing the real **GitHub REST API** across **116 total assertions**. Implements a 3-stage CI/CD pipeline (GitHub Actions: smoke → regression → Newman) plus a Jenkins declarative pipeline, with automated HTML report generation on every run.
 
 ---
 
-## 🎯 Project Overview
+## Why This Project Exists
 
-| Metric | Value |
+Most testing portfolios validate a toy/mock API. This framework instead tests a **real, live, third-party production API** (GitHub's), which means it has to deal with real-world constraints that mock APIs never surface: OAuth token scopes, rate limiting, authentication edge cases, and CI/CD credential management. Phase 4 of this project (see below) is a documented example of exactly that.
+
+---
+
+## Tech Stack
+
+| Layer | Tools |
 |---|---|
-| **Pytest Tests** | 70 (smoke + regression) |
-| **Newman Assertions** | 42 (Postman collection) |
-| **Total Assertions** | 112 |
-| **API Endpoints Tested** | 13 requests across 5 categories |
-| **Response Time Coverage** | All endpoints < 3 seconds |
-| **Schema Validation** | Pydantic v2 models for every response |
-| **CI/CD Platforms** | GitHub Actions + Jenkins |
-| **Test Pass Rate** | 100% |
+| Test Framework | Pytest, pytest-html, pytest-xdist, Allure |
+| HTTP Client | `requests` |
+| Schema Validation | Pydantic v2 |
+| Secondary Test Layer | Postman, Newman (CLI), newman-reporter-htmlextra |
+| CI/CD | GitHub Actions (3-stage pipeline), Jenkins (5-stage declarative pipeline) |
+| Language | Python 3.11 |
 
 ---
 
-## 🛠️ Tech Stack
+## Test Coverage
 
-### Phase 1 — Pytest Foundation
-| Tool | Purpose |
-|---|---|
-| `pytest` | Test runner & framework |
-| `requests` | HTTP calls to GitHub API |
-| `pydantic v2` | Response schema validation (data contracts) |
-| `python-dotenv` | Secure token management via `.env` |
-| `pytest-html` | HTML test reports |
-| `pytest-xdist` | Parallel test execution |
-| `allure-pytest` | Beautiful test dashboards |
+```
+Total: 116 assertions
+  ├── 72 Pytest tests
+  └── 44 Newman (Postman) assertions
 
-### Phase 2 — Postman + Newman
-| Tool | Purpose |
-|---|---|
-| `Postman Collection` | 13 requests, 42 assertions |
-| `Newman CLI` | Automated collection execution |
-| `newman-reporter-htmlextra` | Rich HTML reports with dark theme |
+Suites:
+  ├── test_auth.py     — authentication, rate limits, authenticated user profile
+  ├── test_repos.py     — repository lookups, commits, issues, contributors, languages, branches
+  ├── test_search.py    — repo search, user search, pagination, negative cases
+  └── test_users.py     — user profiles, user repos, followers, negative/404 cases
+```
 
-### Phase 3 — CI/CD Integration
-| Tool | Purpose |
-|---|---|
-| `GitHub Actions` | 3-stage pipeline (smoke → regression → Newman) |
-| `Jenkins` | Additional CI/CD with artifact archival |
-| `Git` | Version control & webhook triggers |
+Test types included: **smoke**, **regression**, **negative/error-path**, **schema validation**, **IDOR/security**, and **rate-limit** tests.
 
 ---
 
-## 📁 Project Structure
+## Design Patterns & Architecture
 
-```
-github-api-pytest-framework/
-├── clients/                          ← API Client Classes (POM equivalent)
-│   ├── base_client.py                ← Session, auth headers, shared assertions
-│   ├── user_client.py                ← /users endpoints
-│   ├── repo_client.py                ← /repos endpoints
-│   ├── search_client.py              ← /search endpoints
-│   └── auth_client.py                ← /user + /rate_limit endpoints
-├── models/
-│   └── github_models.py              ← Pydantic v2 response schemas
-├── tests/                            ← 70 Pytest tests
-│   ├── test_users.py                 ← 17 tests (smoke, regression, negative)
-│   ├── test_repos.py                 ← 17 tests (smoke, regression, negative)
-│   ├── test_search.py                ← 15 tests (smoke, regression, negative)
-│   └── test_auth.py                  ← 11 tests (auth, rate limit)
-├── postman/                          ← Phase 2 Postman Collection
-│   ├── GitHub_API_Collection.json    ← 13 requests, 42 assertions
-│   └── GitHub_API_Environment.json   ← Token and base URL variables
-├── newman/                           ← Phase 2 Newman CLI
-│   └── run_newman.bat                ← Automated collection runner script
-├── .github/workflows/
-│   └── ci.yml                        ← Phase 3 GitHub Actions 3-stage pipeline
-├── Jenkinsfile                       ← Phase 3 Jenkins declarative pipeline
-├── reports/                          ← Auto-generated HTML reports
-├── conftest.py                       ← Shared fixtures (clients, test data)
-├── pytest.ini                        ← Markers, addopts, testpaths
-├── requirements.txt                  ← Python dependencies
-└── README.md                         ← This file
-```
-
----
-
-## ✅ What's Tested
-
-### Phase 1 — Pytest (70 tests)
-
-#### Users (17 tests)
-- ✅ GET /users/{username} — positive, schema validation, response time
-- ✅ GET /users/{username}/repos — pagination, field validation
-- ✅ GET /users/{username}/followers — list endpoints
-- ✅ 404 responses for non-existent users
-- ✅ Parametrized negative tests (multiple invalid inputs)
-
-#### Repos (17 tests)
-- ✅ GET /repos/{owner}/{repo} — metadata, stars, language
-- ✅ GET /repos/{owner}/{repo}/commits — SHA validation, schema
-- ✅ GET /repos/{owner}/{repo}/languages — language detection
-- ✅ GET /repos/{owner}/{repo}/contributors, /branches
-- ✅ Response time < 3 seconds for all endpoints
-- ✅ 404 for invalid owner/repo combinations
-
-#### Search (15 tests)
-- ✅ GET /search/repositories — sorting (stars desc), pagination
-- ✅ GET /search/users — user search with pagination
-- ✅ Total count validation, items list validation
-- ✅ Search result ordering verification
-- ✅ Edge cases (empty queries, gibberish)
-
-#### Auth & Rate Limit (11 tests)
-- ✅ GET /rate_limit — quota checks, reset timestamp
-- ✅ Rate limit model validation via Pydantic
-- ✅ Authenticated user quota >= 5000 requests/hour
-- ✅ Invalid token returns 401 Unauthorized
-- ✅ Public endpoints work without auth (lower rate limit)
-
-### Phase 2 — Postman/Newman (42 assertions)
-
-**13 requests across 5 folders:**
-
-| Folder | Requests | Assertions |
-|---|---|---|
-| Auth & Rate Limit | 2 | 6 |
-| Users | 3 | 9 |
-| Repos | 3 | 9 |
-| Search | 2 | 6 |
-| Negative Tests | 3 | 6 |
-| **Total** | **13** | **42** |
-
-**Assertion types:**
-- Status code validation (200, 401, 404)
-- Schema field validation
-- Response time < 5 seconds
-- Content-Type header checks
-- Sort order verification (stars descending)
-- Error message validation
-
----
-
-## ⚙️ Setup & Run
-
-### 1. Clone & install
-```bash
-git clone https://github.com/sgr111/github-api-pytest-framework.git
-cd github-api-pytest-framework
-pip install -r requirements.txt
-```
-
-### 2. Configure your GitHub token
-```bash
-cp .env.example .env
-# Edit .env:
-GITHUB_TOKEN=ghp_your_personal_access_token
-GITHUB_USERNAME=your_github_username
-```
-
-> Get token: GitHub → Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens. Scopes: `repo`, `user`, `workflow`.
-
-### 3. Run Pytest tests
-
-```bash
-# Full suite (70 tests)
-pytest
-
-# Smoke tests only (15s)
-pytest -m smoke
-
-# Regression tests (full, 30s)
-pytest -m regression
-
-# Negative tests only
-pytest -m negative
-
-# Parallel execution (4 workers)
-pytest -n 4
-
-# With Allure report
-pytest --alluredir=allure-results
-allure serve allure-results
-```
-
-### 4. Run Newman (Postman)
-
-```bash
-# Windows
-newman\run_newman.bat
-
-# Mac/Linux (use bash script instead)
-newman run postman/GitHub_API_Collection.json \
-  --env-var "GITHUB_TOKEN=ghp_..." \
-  -r htmlextra \
-  --reporter-htmlextra-export reports/newman-report.html \
-  --delay-request 300
-```
-
----
-
-## 🔄 CI/CD Pipelines
-
-### GitHub Actions (Phase 3 — Automatic on push)
-
-**3-stage pipeline:**
-
-```
-Push to GitHub
-     ↓
-[Smoke Tests] (15s)
-     ↓ (if passed)
-[Regression Tests] (30s)
-     ↓ (if passed)
-[Newman] (20s)
-     ↓
-Reports uploaded as artifacts
-```
-
-**Triggers:**
-- Every push to `main`, `feature/*`, `fix/*` branches
-- Every pull request to `main`
-- Daily schedule (9 AM UTC)
-
-**Outputs:**
-- `smoke-report.html` — Pytest smoke report
-- `regression-report.html` — Full Pytest report
-- `newman-report.html` — Postman/Newman report
-- `allure-results/` — Allure dashboard data
-
-### Jenkins (Phase 3 — Manual trigger + Git integration)
-
-**Pipeline stages:**
-
-```
-[Checkout] (3s)
-     ↓
-[Setup] (1m 24s) — Python venv + npm
-     ↓
-[Pytest Smoke] (10s)
-     ↓
-[Pytest Regression] (28s)
-     ↓
-[Newman] (15s)
-     ↓
-[Archive Artifacts] (HTML reports)
-```
-
-**Build artifacts:**
-- `jenkins-smoke.html` (47 KiB)
-- `jenkins-regression.html` (81 KiB)
-- `newman-jenkins.html` (464 KiB)
-
-**Access:** `http://localhost:8080/job/GitHub-API-Pytest-Framework/`
-
----
-
-## 📊 Test Reports
-
-### Pytest HTML Report
-After running tests:
-```bash
-open reports/report.html
-```
-
-Includes:
-- Test summary (passed/failed/skipped)
-- Per-test logs and assertions
-- Execution time per test
-- Failure screenshots
-
-### Newman HTML Report
-```bash
-open reports/newman-report.html
-```
-
-Includes:
-- Request/response pairs
-- Assertion pass/fail breakdown
-- Average response time: ~377ms
-- Dark-themed dashboard
-
-### Allure Dashboard
-```bash
-pytest --alluredir=allure-results
-allure serve allure-results
-```
-
-Interactive dashboard with:
-- Timeline view
-- Trend graphs
-- Failure history
-- Test categories
-
----
-
-## 🎓 Design Patterns & Architecture
-
-### API Client Classes (POM equivalent)
-Instead of Page Objects for UI, we have **Client Classes** that wrap API endpoints:
+### API Client Classes (Page-Object-Model equivalent for APIs)
+Instead of Page Objects for UI, each GitHub resource gets a thin client class wrapping its endpoints, all sharing common assertion helpers from a base class:
 
 ```python
-# Base class with shared logic
 class BaseClient:
-    def assert_status(response, expected)
-    def assert_response_time(response, max_seconds)
-    def assert_content_type_json(response)
-
-# Specialized clients
-class UserClient(BaseClient):
-    def get_user(username)
-    def get_user_repos(username, per_page)
-    def get_and_validate_user(username) → UserModel
+    def assert_status(self, response, expected): ...
+    def assert_response_time(self, response, max_seconds): ...
 
 class RepoClient(BaseClient):
-    def get_repo(owner, repo)
-    def get_repo_commits(owner, repo)
-    def get_and_validate_repo(owner, repo) → RepoModel
+    def get_repo(self, owner: str, repo: str):
+        """GET /repos/{owner}/{repo}"""
+        return self.get(f"/repos/{owner}/{repo}")
+
+    def get_repo_commits(self, owner: str, repo: str, per_page: int = 10):
+        """GET /repos/{owner}/{repo}/commits"""
+        return self.get(f"/repos/{owner}/{repo}/commits", params={"per_page": per_page})
 ```
 
-**Benefits:**
-- Reusable assertion methods
-- Centralized auth header management
-- Schema validation on every response
-- Session pooling (connection reuse)
+**Benefits:** reusable assertions, centralized auth header management, one place to update if the API changes.
 
 ### Pydantic v2 Data Contracts
-Every API response is validated against a Pydantic model:
+Every response is parsed into a Pydantic model, so a breaking API change fails the test immediately instead of silently passing:
 
 ```python
 class UserModel(BaseModel):
     login: str
     id: int
-    type: str  # validates: must be "User" or "Organization"
+    type: str
     public_repos: int
-    
+    followers: int
+
     @field_validator("type")
-    def type_must_be_valid(cls, v):
-        assert v in ("User", "Organization")
+    @classmethod
+    def type_must_be_user_or_org(cls, v):
+        assert v in ("User", "Organization"), f"Unexpected type: {v}"
         return v
 ```
 
-**Benefits:**
-- Breaking API changes caught immediately
-- Type safety
-- Auto-documentation of response schema
-- Custom validation logic
-
 ### Session-Scoped Fixtures
-Fixtures are created once per test session (not per test):
+API clients are instantiated once per test session, not once per test:
 
 ```python
 @pytest.fixture(scope="session")
-def user_client():
-    return UserClient()  # Created once, reused 70 times
+def repo_client():
+    return RepoClient()
 ```
 
-**Benefits:**
-- 70% faster test execution
-- Token loaded once, not 70 times
-- Realistic HTTP connection pooling
-- Mimics production behavior
+This avoids re-loading the token and rebuilding a client 72 times, and mirrors realistic HTTP connection reuse instead of a fresh session per test.
 
 ---
 
-## 🐛 Known Issues & Phase 4
+## Project Structure
 
-### `/user` Endpoint Tests (68 tests passing, 2 skipped)
-Two tests were removed due to GitHub Actions token scope limitation:
-- `test_get_authenticated_user_status_200`
-- `test_get_authenticated_user_has_login`
-
-**Root cause:** GitHub Actions' default `github.token` doesn't have `user` scope access to `/user` endpoint → returns 403 Unauthorized.
-
-**Phase 4 will solve this:**
-- Fine-grained token creation with explicit `/user` scope
-- Proper environment variable injection in CI/CD
-- Comprehensive troubleshooting guide
-
-See [Phase 4 — Interview Prep Guide](#) for the full analysis.
-
----
-
-## 📈 Performance Metrics
-
-| Metric | Value |
-|---|---|
-| Pytest execution time | 27.6s (70 tests) |
-| Newman execution time | 11.2s (13 requests, 42 assertions) |
-| Average response time | 377ms |
-| Min response time | 237ms |
-| Max response time | 543ms |
-| Pytest + Newman total | ~45s per full pipeline |
-| Jenkins full pipeline | 3m 19s (includes setup) |
+```
+github-api-pytest-framework/
+├── .github/workflows/ci.yml     # 3-stage GitHub Actions pipeline
+├── clients/                     # Thin API client wrappers per resource
+│   ├── auth_client.py
+│   ├── repo_client.py
+│   ├── search_client.py
+│   ├── user_client.py
+│   └── base_client.py           # shared request/assert helpers
+├── models/
+│   └── github_models.py         # Pydantic v2 response schemas
+├── tests/
+│   ├── test_auth.py
+│   ├── test_repos.py
+│   ├── test_search.py
+│   └── test_users.py
+├── postman/
+│   └── GitHub_API_Collection.json
+├── newman/                      # Newman config/reports
+├── conftest.py                  # shared fixtures
+├── pytest.ini                   # markers: smoke, regression, negative
+├── Jenkinsfile                  # 5-stage declarative Jenkins pipeline
+├── requirements.txt
+└── .env.example
+```
 
 ---
 
-## 🚀 Author
+## CI/CD Pipeline
 
-**Sourabh Sagar** — QA Automation Engineer + Backend Developer
+**GitHub Actions** (`.github/workflows/ci.yml`) — runs on every push to `main`/`feature/*`/`fix/*`, on PRs to `main`, and daily on a schedule:
 
-- **GitHub:** [github.com/sgr111](https://github.com/sgr111)
-- **Email:** sgrsourabh111@gmail.com
-- **Location:** Lucknow, Uttar Pradesh
+```
+1. Smoke Tests       → fast subset (@pytest.mark.smoke), must pass first
+2. Full Regression   → complete Pytest suite (needs: smoke-tests)
+3. Newman Collection → Postman suite via CLI (needs: regression-tests)
+```
+
+Each stage uploads its HTML report as a workflow artifact regardless of pass/fail.
+
+**Jenkins** (`Jenkinsfile`) — a parallel 5-stage declarative pipeline (checkout → Python setup → install → test execution → HTML report archival), scheduled daily, demonstrating familiarity with a self-hosted CI tool alongside GitHub Actions.
 
 ---
 
-## 📝 License
+## Setup & Local Run
 
-Open source — feel free to fork and use for learning.
+```bash
+git clone https://github.com/sgr111/github-api-pytest-framework.git
+cd github-api-pytest-framework
+
+python -m venv venv
+# Windows
+.\venv\Scripts\Activate.ps1
+# macOS/Linux
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+cp .env.example .env
+# then edit .env and add your own GitHub token — see "Authentication" below
+
+pytest -v
+```
+
+### Running specific suites
+```bash
+pytest -m smoke          # fast smoke subset only
+pytest -m regression     # full regression suite
+pytest -m negative       # negative/error-path tests only
+pytest --html=reports/report.html --self-contained-html   # generate HTML report
+```
+
+### Running the Postman suite locally
+```bash
+npm install -g newman newman-reporter-htmlextra
+newman run postman/GitHub_API_Collection.json \
+  --env-var "GITHUB_TOKEN=$GITHUB_TOKEN" \
+  --reporters cli,htmlextra \
+  --reporter-htmlextra-export reports/newman-report.html
+```
 
 ---
 
-## 🔗 Related Projects
+## Authentication
 
-- **FastAPI Task Manager:** [github.com/sgr111/fastapi-task-manager-v2](https://github.com/sgr111/fastapi-task-manager-v2)
-- **QA Automation Framework:** [github.com/sgr111/qa-automation-framework](https://github.com/sgr111/qa-automation-framework)
+This framework authenticates against the real GitHub API, so it needs a token with the right scope — a plain, unscoped token is **not** enough for the `/user` endpoint.
+
+**Locally:** create a [fine-grained personal access token](https://github.com/settings/tokens?type=beta) with:
+- Repository access → your fork/copy of this repo
+- Repository permissions → **Contents: Read**, **Metadata: Read**
+- Account permissions → **Profile: Read** (or Read/Write, if that's the only tier offered)
+
+Add it to `.env` as `GITHUB_TOKEN=<your token>`.
+
+**In CI:** the token is stored as a GitHub Actions repository secret named `GH_API_TOKEN` (not `GITHUB_API_TOKEN` — GitHub reserves the `GITHUB_` prefix for its own secrets) and referenced in the workflow as `${{ secrets.GH_API_TOKEN }}`.
+
+---
+
+## Phase 4 — A Real Debugging Case Study
+
+Two tests (`GET /user` status check and login-field check) originally passed locally but failed in CI with `403 Forbidden`. Root cause: GitHub Actions' default `github.token` intentionally excludes the `user` OAuth scope by design (least-privilege default), which the `/user` endpoint requires.
+
+**Fix:** created a fine-grained PAT with explicit `Contents`, `Metadata`, and `Profile` scopes, stored it as a `GH_API_TOKEN` secret, and updated the workflow's three token references accordingly. Along the way this also surfaced a separate, unrelated `401 Bad credentials` failure locally, caused by an *old, expired* classic token still sitting in a local `.env` file — a good reminder that CI and local environments can drift independently even when the code itself hasn't changed.
+
+Full write-up of every error encountered, root cause, and fix is documented separately as an interview-ready case study.
+
+---
+
+## Author
+
+**Sourabh Sagar**
+Lucknow, Uttar Pradesh, India
+[github.com/sgr111](https://github.com/sgr111) · sgrsourabh111@gmail.com
+
+Built as part of a self-taught transition into Backend Development / QA Automation (SDET) roles.
